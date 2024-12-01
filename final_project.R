@@ -94,8 +94,34 @@ check_time_span(covid.responses.df)
 check_time_span(daily.cases.df)
 check_time_span(daily.vaccination)
 
+# check data for state level
+
+daily.cases.df %>% 
+  filter(state == "Alaska") %>% 
+  select(state,date,confirmed:active) %>% 
+  pivot_longer(cols = c("confirmed","deaths","recovered","active"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  ggplot(.,aes(x = date,
+               y = value,
+               color = variable)) +
+  geom_point() +
+  facet_grid(variable ~ . )
 
 
+# check data for national level
  
-
+daily.cases.df %>% 
+  select(state,date,confirmed:active) %>% 
+  pivot_longer(cols = c("confirmed","deaths","recovered","active"),
+               names_to = "variable",
+               values_to = "value") %>% 
+  group_by(date,variable) %>% 
+  summarise(value = sum(value,na.rm = T)) %>% 
+  ungroup() %>% 
+  ggplot(.,aes(x = date,
+               y = value,
+               color = variable)) +
+  geom_point() +
+  facet_grid(variable ~ . )
 
