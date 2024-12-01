@@ -6,6 +6,9 @@ install.packages("rio")
 library("tidyverse")
 library("janitor")
 library("rio")
+source("./custom_functions.R")
+
+# 1) importing all Data
 
 directory <- "./data/csse_covid_19_daily_reports_us/"
 daily.cases.df <- list.files("./data/csse_covid_19_daily_reports_us/") %>% 
@@ -71,7 +74,17 @@ covid.responses.df <- covid.responses.df %>%
          contains("index")) %>% 
   mutate_at(.,.vars = colnames(.)[3:ncol(.)],
             .funs = as.numeric)
-                              
+
+
+# 2) check data for validity
+
+count.na(covid.responses.df)
+count.na(daily.cases.df)
+count.na(daily.vaccination)
+count.na(GDP_data)
+count.na(population.data)
+
+
 
  
 
