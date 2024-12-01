@@ -16,7 +16,11 @@ daily.cases.df <- list.files("./data/csse_covid_19_daily_reports_us/") %>%
   pull(content) %>% 
   bind_rows(.)
 
-daily.cases.df <- clean_names(daily.cases.df)
+daily.cases.df <- clean_names(daily.cases.df) %>% 
+  select(state = province_state,everything())
+
+
+
 getwd()
 
 
@@ -26,7 +30,49 @@ GDP_data <- rio::import(file = "./data/GDP_USA_states.xlsx",
 
 
 
-GPD_data <- GPD_data %>% 
+GDP_data <- GDP_data %>% 
+  clean_names(.) %>% 
   select(state = state_or_territory,
          gdp_nominal = nominal_gdp_2020,
-         gdp_per_capita)
+         gdp_per_capita = gdp_per_capita_2020)
+
+GDP_data <- GDP_data %>% 
+  mutate_all(.,.f = str_remove_all,",") %>% 
+  mutate_all(.,.f = str_remove_all,"\\$") %>% 
+  mutate_at(.,.vars = colnames(.)[2:3],.f = as.numeric)
+
+
+population.data <-  rio::import(file = "./data/Population_USA_states.xlsx") %>% 
+                                  clean_names(.)
+
+population.data <- population.data %>% 
+  select(state = name,
+         pop = pop_2019)
+
+
+daily.vaccination <-  rio::import(file = "./data/us-daily-covid-vaccine-doses-administered.csv") %>% 
+  clean_names(.)
+
+daily.vaccination <- daily.vaccination %>% 
+  select(state = entity,
+         date = day,
+         daily_vaccinations)
+
+
+
+
+covid.responses.df <-  rio::import(file = "./data/OxCGRT_US_latest.csv") %>% 
+  clean_names(.)
+
+covid.responses.df <- covid.responses.df %>% 
+  mutate(date = ymd(date)) %>% 
+  select(state = region_name ,
+         date,
+         contains("index")) %>% 
+  mutate_at(.,.vars = colnames(.)[3:ncol(.)],
+            .funs = as.numeric)
+                              
+
+ 
+
+
