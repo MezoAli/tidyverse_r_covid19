@@ -26,6 +26,25 @@ count.na <- function(df){
     theme(axis.text.x = element_text(angle = 90))
   
   plot_grid(p1,p2,nrow = 2)
+}
+
+check_time_span <- function(df){
+  require(tidyverse)
   
+  df.time <- df %>% 
+    summarise(distinct_dates = n_distinct(date),
+              min_date = min(date,na.rm = T),
+              max_date = max(date,na.rm = T),
+              range_days = max(date,na.rm = T) - min(date,na.rm = T))
   
-  }
+  print(df.time)
+  
+  df %>% 
+    group_by(state) %>% 
+    summarise(distinct_dates = n_distinct(date)) %>% 
+    ggplot(.,aes(x = state,
+                 y = distinct_dates)) +
+    geom_col() +
+    theme(axis.text.x = element_text(angle = 90))
+    
+}

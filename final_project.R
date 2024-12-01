@@ -15,14 +15,17 @@ daily.cases.df <- list.files("./data/csse_covid_19_daily_reports_us/") %>%
   as_tibble() %>% 
   mutate(full_path = paste0(directory,value)) %>% 
   mutate(content = map(.x = full_path,
-                       .f = ~read_csv(.))) %>% 
+                       .f = ~rio::import(.))) %>% 
   pull(content) %>% 
   bind_rows(.)
 
 daily.cases.df <- clean_names(daily.cases.df) %>% 
-  select(state = province_state,everything())
+  select(state = province_state,
+         everything()) %>% 
+  mutate(last_update = ymd_hms(last_update)) %>% 
+  mutate(date = date(last_update))
 
-
+summary(daily.cases.df$date)
 
 getwd()
 
@@ -78,11 +81,18 @@ covid.responses.df <- covid.responses.df %>%
 
 # 2) check data for validity
 
+# check for na values
+
 count.na(covid.responses.df)
 count.na(daily.cases.df)
 count.na(daily.vaccination)
 count.na(GDP_data)
 count.na(population.data)
+
+# check for time series
+check_time_span(covid.responses.df)
+check_time_span(daily.cases.df)
+check_time_span(daily.vaccination)
 
 
 
