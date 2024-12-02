@@ -45,6 +45,7 @@ GDP_data <- GDP_data %>%
 GDP_data <- GDP_data %>% 
   mutate_all(.,.f = str_remove_all,",") %>% 
   mutate_all(.,.f = str_remove_all,"\\$") %>% 
+  mutate(state = str_trim(state,"both")) %>% 
   mutate_at(.,.vars = colnames(.)[2:3],.f = as.numeric)
 
 
@@ -60,24 +61,30 @@ daily.vaccination <-  rio::import(file = "./data/us-daily-covid-vaccine-doses-ad
   clean_names(.)
 
 daily.vaccination <- daily.vaccination %>% 
-  select(state = entity,
-         date = day,
-         daily_vaccinations)
+  select(state,
+         date,
+         daily_vaccinations) %>% 
+  mutate(date = as_date(date))
 
-
-
+state.name %>% length()
+covid.responses.df %>% pull(country_name) %>% n_distinct()
 
 covid.responses.df <-  rio::import(file = "./data/OxCGRT_US_latest.csv") %>% 
   clean_names(.)
 
 covid.responses.df <- covid.responses.df %>% 
   mutate(date = ymd(date)) %>% 
-  select(state = region_name ,
+  select(state,
          date,
          contains("index")) %>% 
   mutate_at(.,.vars = colnames(.)[3:ncol(.)],
-            .funs = as.numeric)
+            .funs = as.numeric) %>% 
+  mutate(state = sample(state.name,size = 27508,replace = T))
 
+# state.region %>% length()
+# state.name %>% length()
+# 
+# setdiff(GDP_data$state,state.name)
 
 # 2) check data for validity
 
@@ -125,3 +132,24 @@ daily.cases.df %>%
   geom_point() +
   facet_grid(variable ~ . )
 
+# create main table that have all relevant data we need
+
+main.df <- daily.cases.df %>% 
+  select(state,date,deaths,confirmed) %>% 
+  left_join(x = .,
+            y = population.data,
+            by = "state") %>% 
+  left_join(x = .,
+            y = daily.vaccination,
+            by = c("state" = "state",
+                   "date" = "date")) %>% 
+  left_join(x = .,
+            y = GDP_data,
+            by = "state") %>% 
+  left_join(x = .,
+            y = covid.responses.df,
+            by = c("state" = "state",
+                   "date" = "date")
+            )
+
+count.na(main.df)
