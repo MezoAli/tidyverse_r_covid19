@@ -40,13 +40,21 @@ GDP_data <- GDP_data %>%
   clean_names(.) %>% 
   select(state = state_or_territory,
          gdp_nominal = nominal_gdp_2020,
-         gdp_per_capita = gdp_per_capita_2020)
+         gdp_per_capita = gdp_per_capita_2020) 
 
 GDP_data <- GDP_data %>% 
   mutate_all(.,.f = str_remove_all,",") %>% 
   mutate_all(.,.f = str_remove_all,"\\$") %>% 
   mutate(state = str_trim(state,"both")) %>% 
+  filter(state != "District of Columbia") %>% 
+  filter(state != "United States") %>% 
+  arrange(state) %>% 
+  mutate(region = state.region) %>% 
   mutate_at(.,.vars = colnames(.)[2:3],.f = as.numeric)
+
+covid.responses.df %>%  distinct(state) %>% pull(state) %>% length()
+daily.cases.df%>%  distinct(state) %>% pull(state) %>% length()
+daily.vaccination %>%  distinct(state) %>% pull(state) %>% length()
 
 
 population.data <-  rio::import(file = "./data/Population_USA_states.xlsx") %>% 
@@ -153,3 +161,86 @@ main.df <- daily.cases.df %>%
             )
 
 count.na(main.df)
+
+# main.df %>% 
+#   filter(state == "California") %>% 
+#   summarise(confirmed_total = sum(confirmed,na.rm = T))
+
+
+# check daily vaccinations and replace na with 0
+
+main.df %>% 
+  filter(is.na(daily_vaccinations)) %>% 
+  nrow()
+
+main.df <- main.df %>% 
+  mutate(daily_vaccinations = replace_na(daily_vaccinations,0))
+
+# add coulmn that have confirmed daily cases
+
+main.df <- main.df %>% 
+  group_by(state) %>% 
+  mutate(confirmed_daily_cases = confirmed - lag(confirmed,1),
+         deaths_daily_cases = deaths - lag(deaths,1)) %>% 
+  ungroup()
+
+# check if confirmed_daily or deaths daily have negative values
+
+main.df %>% 
+  filter(confirmed_daily_cases < 0)
+
+main.df %>% 
+  filter(deaths_daily_cases < 0)
+
+# fix the negative issues and replave negatives with 0
+
+main.df <- main.df %>% 
+  mutate(confirmed_daily_cases = case_when(confirmed_daily_cases >= 0 ~ confirmed_daily_cases,
+                                           T ~ 0),
+         deaths_daily_cases = case_when(deaths_daily_cases >= 0 ~ deaths_daily_cases,
+                                        T ~ 0))
+
+
+# states per region
+
+main.df %>% 
+  filter(!is.na(region)) %>% 
+  filter(!is.na(date)) %>% 
+  nrow()
+
+main.df %>% 
+  filter(!is.na(region)) %>% 
+  group_by(region) %>% 
+  summarise(state_per_region = n_distinct(state)) %>% 
+  ungroup()
+
+max_date <- main.df %>% pull(date) %>% max(.)
+
+main.df <- main.df %>% 
+  mutate(state_ = str_to_lower(state)) %>% 
+  filter(!is.na(region))
+
+# show map
+
+basic_map <- main.df %>% 
+  filter(date == max_date) %>% 
+  left_join(x = .,
+            y = map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill = region)) +
+    geom_polygon(color = "black") +
+  xlab("") +
+  ylab("") +
+  theme_bw() +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank())
+
+ggsave(filename = "basic_map.png",
+       plot = basic_map,
+       width = 29,
+       height = 21,
+       units = "cm",
+       dpi = 600)
