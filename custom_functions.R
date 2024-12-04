@@ -54,7 +54,6 @@ plot_confirmed_death_per_region <- function(region){
   require(tidyverse)
   require(cowplot)
   
-  #region <- rlang::enquo(region)
   p1 <- main.df %>% 
     filter(region == !!region) %>% 
     ggplot(.,aes(x = date,
@@ -76,6 +75,36 @@ plot_confirmed_death_per_region <- function(region){
     geom_point() +
     scale_color_viridis_d() +
     ggtitle(paste0("Death cases + ",region))
+  
+  plot_grid(p1,p2,nrow = 2)
+}
+
+
+plot_confirmed_death_per_state <- function(state){
+  require(tidyverse)
+  require(cowplot)
+  
+  p1 <- main.df %>% 
+    filter(state == !!state) %>% 
+    ggplot(.,aes(x = date,
+                 y = confirmed,
+                 color = state,
+                )) +
+    geom_line(show.legend = F) +
+    geom_point(show.legend = F) +
+    scale_color_viridis_d() +
+    ggtitle(paste0("Confirmed cases + ",state))
+  
+  p2 <- main.df %>% 
+    filter(state == !!state) %>% 
+    ggplot(.,aes(x = date,
+                 y = deaths,
+                 color = state,
+                 )) +
+    geom_line() +
+    geom_point() +
+    scale_color_viridis_d() +
+    ggtitle(paste0("Death cases + ",state))
   
   plot_grid(p1,p2,nrow = 2)
 }

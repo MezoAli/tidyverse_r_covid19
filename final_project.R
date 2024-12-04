@@ -248,11 +248,20 @@ ggsave(filename = "basic_map.png",
 
 
 # show confirmed,death cases per each region
+
 regions <- main.df %>% distinct(region) %>% pull(.)
-main.df %>% 
+num_states_per_region <- main.df %>% 
   group_by(region) %>% 
   summarise(n_state = n_distinct(state)) %>% 
   ungroup()
 
 plot_confirmed_death_per_region("Northeast")
 plot_confirmed_death_per_region("South")
+
+
+# show confirmed,death cases per each region
+
+states <- main.df %>% distinct(state) %>% pull(.)
+
+plot_confirmed_death_per_state("Alabama")
+plot_confirmed_death_per_state("California")
