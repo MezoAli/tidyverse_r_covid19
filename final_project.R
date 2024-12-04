@@ -52,9 +52,9 @@ GDP_data <- GDP_data %>%
   mutate(region = state.region) %>% 
   mutate_at(.,.vars = colnames(.)[2:3],.f = as.numeric)
 
-covid.responses.df %>%  distinct(state) %>% pull(state) %>% length()
-daily.cases.df%>%  distinct(state) %>% pull(state) %>% length()
-daily.vaccination %>%  distinct(state) %>% pull(state) %>% length()
+# covid.responses.df %>%  distinct(state) %>% pull(state) %>% length()
+# daily.cases.df%>%  distinct(state) %>% pull(state) %>% length()
+# daily.vaccination %>%  distinct(state) %>% pull(state) %>% length()
 
 
 population.data <-  rio::import(file = "./data/Population_USA_states.xlsx") %>% 
@@ -69,8 +69,8 @@ daily.vaccination <-  rio::import(file = "./data/us-daily-covid-vaccine-doses-ad
   clean_names(.)
 
 daily.vaccination <- daily.vaccination %>% 
-  select(state,
-         date,
+  select(state = entity,
+         date = day,
          daily_vaccinations) %>% 
   mutate(date = as_date(date))
 
@@ -82,7 +82,7 @@ covid.responses.df <-  rio::import(file = "./data/OxCGRT_US_latest.csv") %>%
 
 covid.responses.df <- covid.responses.df %>% 
   mutate(date = ymd(date)) %>% 
-  select(state,
+  select(state = region_name,
          date,
          contains("index")) %>% 
   mutate_at(.,.vars = colnames(.)[3:ncol(.)],
@@ -221,6 +221,7 @@ main.df <- main.df %>%
   filter(!is.na(region))
 
 # show map
+  
 
 basic_map <- main.df %>% 
   filter(date == max_date) %>% 
@@ -244,3 +245,14 @@ ggsave(filename = "basic_map.png",
        height = 21,
        units = "cm",
        dpi = 600)
+
+
+# show confirmed,death cases per each region
+regions <- main.df %>% distinct(region) %>% pull(.)
+main.df %>% 
+  group_by(region) %>% 
+  summarise(n_state = n_distinct(state)) %>% 
+  ungroup()
+
+plot_confirmed_death_per_region("Northeast")
+plot_confirmed_death_per_region("South")
