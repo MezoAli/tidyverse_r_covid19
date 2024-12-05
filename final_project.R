@@ -2,10 +2,12 @@ rm(list=ls())
 graphics.off()
 install.packages("janitor")
 install.packages("rio")
+install.packages("zoo")
 
 library("tidyverse")
 library("janitor")
 library("rio")
+library("zoo")
 source("./custom_functions.R")
 
 # 1) importing all Data
@@ -265,3 +267,144 @@ states <- main.df %>% distinct(state) %>% pull(.)
 
 plot_confirmed_death_per_state("Alabama")
 plot_confirmed_death_per_state("California")
+
+# which state paid the heights confirmed and deaths cases per population plot
+setdiff(population.data$state,GDP_data$state)
+
+
+
+main.df <- main.df %>% 
+  mutate(relative_confirmed = (confirmed / pop) * 100,
+         relative_death = (deaths / pop) * 100)
+
+
+relative_confirmed_total_plot <- main.df %>% 
+  filter(date == max_date) %>% 
+  arrange(relative_confirmed) %>% 
+  mutate(state = as.factor(state),
+         state = fct_inorder(state)) %>% 
+  ggplot(.,aes(x = relative_confirmed,
+              y = state,
+              fill = region)) +
+  geom_col() +
+  ggtitle("Relative Confirmed Cases per State") +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold"))
+
+relative_death_total_plot <- main.df %>% 
+  filter(date == max_date) %>% 
+  arrange(relative_death) %>% 
+  mutate(state = as.factor(state),
+         state = fct_inorder(state)) %>% 
+  ggplot(.,aes(x = relative_death,
+               y = state,
+               fill = region)) +
+  geom_col() +
+  ggtitle("Relative Death Cases per State") +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold"))
+
+plot_total <- plot_grid(relative_confirmed_total_plot,
+                      relative_death_total_plot,
+                      ncol = 2)
+
+ggsave("./total_relative_confirmed_deaths_per_state-plot.png",
+       plot = plot_total,
+       width = 30,
+       height = 20,
+       units = "cm",
+       dpi = 600)
+
+# which state paid the heights confirmed and deaths cases per population map
+
+relative_confirmed_total_map <- main.df %>% 
+  filter(date == max_date) %>% 
+  left_join(x = .,
+            y =  map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill = relative_confirmed)) +
+  geom_polygon(color = "black") +
+  scale_fill_gradient(low = "white",
+                      high = "red") +
+  ggtitle("Relative Confirmed Cases per State") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold")) +
+  labs(x = "" , y = "")
+
+
+relative_death_total_map <- main.df %>% 
+  filter(date == max_date) %>% 
+  left_join(x = .,
+            y =  map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill = relative_death)) +
+  geom_polygon(color = "black") +
+  scale_fill_gradient(low = "white",
+                      high = "black") +
+  ggtitle("Relative Death Cases per State") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold")) +
+  labs(x = "" , y = "")
+
+map_total <- plot_grid(relative_confirmed_total_map,
+                        relative_death_total_map,
+                        nrow = 2)
+
+ggsave("./total_relative_confirmed_deaths_per_state_map.png",
+       plot = map_total,
+       width = 30,
+       height = 20,
+       units = "cm",
+       dpi = 600)
+
+
+
+# plot confirmed/deaths cases per 7 days average
+
+
+main.df <- main.df %>% 
+  arrange(state,date) %>% 
+  group_by(state) %>% 
+  mutate(confirmed_daily_cases_7d_avg = rollapply(confirmed_daily_cases,FUN = mean,width = 7,align = "right",fill = NA),
+         deaths_daily_cases_7d_avg = rollapply(deaths_daily_cases,FUN = mean,width = 7,align = "right",fill = NA)) %>% 
+  ungroup()
+
+
+regions
+plot_confirmed_death_per_region_7d_average("North Central")  
+plot_confirmed_death_per_region_7d_average("South")  
+plot_confirmed_death_per_region_7d_average("Northeast")  
+
+# does state wealth and population affects confirmed and deaths cases
+
+main.df %>%
+  filter(date == max_date) %>% 
+  ggplot(.,aes(x = confirmed,
+               y = deaths,
+               color = gdp_per_capita,
+               size = pop)) +
+  geom_jitter(alpha = 0.7) +
+  scale_color_gradient(low = "brown1",high = "green")+
+  scale_size_area(max_size = 40) +
+  xlab("Confirmed cases") +
+  ylab("Deaths Cases") +
+  ggtitle("Total Confirmed and Death Cases vs Population and GDP")+
+  theme(plot.title = element_text(face = "bold",hjust = 0.5)) +
+  facet_wrap(. ~ region)
+
+ggsave(filename ="confirmed_death_cases_vs_GDP_pop.png",
+       plot = last_plot(),
+       width = 30,
+       height = 20,
+       dpi = 600,
+       units = "cm"
+)
+
+#main.df.na.count <- count.na(main.df) %>% unlist()
+  

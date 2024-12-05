@@ -108,3 +108,40 @@ plot_confirmed_death_per_state <- function(state){
   
   plot_grid(p1,p2,nrow = 2)
 }
+
+
+plot_confirmed_death_per_region_7d_average <- function(region){
+  require(tidyverse)
+  require(cowplot)
+  
+  p1 <- main.df %>% 
+    filter(region == !!region) %>% 
+    ggplot(.,aes(x = date,
+                 y = confirmed_daily_cases_7d_avg,
+                 color = state,
+                 group = state)) +
+    geom_line(show.legend = F) +
+    geom_point(show.legend = F) +
+    scale_color_viridis_d() +
+    ggtitle(paste0("Confirmed cases 7 days average + ",region))
+  
+  p2 <- main.df %>% 
+    filter(region == !!region) %>% 
+    ggplot(.,aes(x = date,
+                 y = deaths_daily_cases_7d_avg,
+                 color = state,
+                 group = state)) +
+    geom_line() +
+    geom_point() +
+    scale_color_viridis_d() +
+    ggtitle(paste0("Death cases 7 days average + ",region))
+  
+  plot <- plot_grid(p1,p2,nrow = 2)
+  ggsave(filename = paste0("confirmed_death_cases_7d_avg_",region,".png"),
+         plot = plot,
+         width = 30,
+         height = 20,
+         dpi = 600,
+         units = "cm"
+         )
+}
