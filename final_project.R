@@ -406,5 +406,13 @@ ggsave(filename ="confirmed_death_cases_vs_GDP_pop.png",
        units = "cm"
 )
 
-#main.df.na.count <- count.na(main.df) %>% unlist()
-  
+
+# does vaccination affect confirmed cases and deaths
+
+regions
+plot_confirmed_death_per_region_vacc_doses("South")
+plot_confirmed_death_per_region_vacc_doses("West")
+
+
+plot_confirmed_death_per_state_vacc_doses("Alabama")
+plot_confirmed_death_per_state_vacc_doses("California")
