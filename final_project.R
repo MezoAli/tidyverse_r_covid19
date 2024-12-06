@@ -216,12 +216,12 @@ main.df %>%
   summarise(state_per_region = n_distinct(state)) %>% 
   ungroup()
 
-max_date <- main.df %>% pull(date) %>% max(.)
 
 main.df <- main.df %>% 
   mutate(state_ = str_to_lower(state)) %>% 
   filter(!is.na(region))
 
+max_date <- main.df %>% pull(date) %>% max(.)
 # show map
   
 
@@ -407,12 +407,65 @@ ggsave(filename ="confirmed_death_cases_vs_GDP_pop.png",
 )
 
 
-# does vaccination affect confirmed cases and deaths
+# does vaccination affect confirmed cases and deaths per region
 
 regions
 plot_confirmed_death_per_region_vacc_doses("South")
 plot_confirmed_death_per_region_vacc_doses("West")
 
 
+# does vaccination affect confirmed cases and deaths per state
+
+states <- main.df %>% 
+  pull(state) %>% 
+  unique(.)
+
+states
 plot_confirmed_death_per_state_vacc_doses("Alabama")
 plot_confirmed_death_per_state_vacc_doses("California")
+plot_confirmed_death_per_state_vacc_doses("Pennsylvania")
+
+
+# show confirmed cases on map over time
+
+main.df <- main.df %>% 
+  arrange(state,date) %>% 
+  group_by(state) %>%
+  distinct(date,.keep_all = T) %>% 
+  mutate(date_id = row_number()) %>% 
+  ungroup() %>% 
+  mutate(days_30_flag = case_when(date_id == 1 ~ T,
+                                  date == max_date ~ T,
+                                  date_id %% 30 == 0 ~ T,
+                                  T ~ F))
+  
+
+relative_confirmed_total_map_per_month <- main.df %>% 
+  filter(days_30_flag) %>%
+  filter(state != "Florida") %>% 
+  select(state,state_,region,confirmed,date,days_30_flag) %>% 
+  left_join(x = .,
+            y =  map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill =confirmed)) +
+  geom_polygon(color = "black") +
+  facet_wrap(~ date) +
+  scale_fill_gradient(low = "white",
+                      high = "red") +
+  ggtitle("Relative Confirmed Cases per State Over Time") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold")) +
+  labs(x = "" , y = "")
+
+ggsave(filename = "relative_confirmed_total_map_over_time.png",
+       plot = relative_confirmed_total_map_per_month,
+       width = 30,
+       height = 20,
+       units = "cm",
+       dpi = 600
+       )
+
