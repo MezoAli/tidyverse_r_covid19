@@ -469,3 +469,66 @@ ggsave(filename = "relative_confirmed_total_map_over_time.png",
        dpi = 600
        )
 
+
+# show deaths cases on map over time
+
+relative_deaths_total_map_over_time <- main.df %>% 
+  filter(days_30_flag) %>%
+  filter(state != "Florida") %>% 
+  select(state,state_,region,confirmed,deaths,date,days_30_flag) %>% 
+  left_join(x = .,
+            y =  map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill =deaths)) +
+  geom_polygon(color = "black") +
+  facet_wrap(~ date) +
+  scale_fill_gradient(low = "white",
+                      high = "black") +
+  ggtitle("Relative Deaths Cases per State Over Time") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold")) +
+  labs(x = "" , y = "")
+
+ggsave(filename = "relative_deaths_total_map_over_time.png",
+       plot = relative_deaths_total_map_over_time,
+       width = 30,
+       height = 20,
+       units = "cm",
+       dpi = 600
+)
+
+# show vaccination on map over time
+
+relative_vacc_on_map_over_time <- main.df %>% 
+  filter(days_30_flag) %>%
+  filter(state != "Florida") %>% 
+  select(state,state_,region,daily_vaccinations,date,days_30_flag) %>% 
+  left_join(x = .,
+            y =  map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill =daily_vaccinations)) +
+  geom_polygon(color = "black") +
+  facet_wrap(~ date) +
+  scale_fill_gradient(low = "white",
+                      high = "green") +
+  ggtitle("Vaccination per State Over Time") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold")) +
+  labs(x = "" , y = "")
+
+ggsave(filename = "vaccination_over_time.png",
+       plot = relative_vacc_on_map_over_time,
+       width = 30,
+       height = 20,
+       units = "cm",
+       dpi = 600
+)
+
