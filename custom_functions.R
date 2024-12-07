@@ -232,7 +232,7 @@ plot_confirmed_death_per_state_vacc_doses <- function(state){
     ggtitle(paste0("Daily vaccination + ",state))
   
   plot <- plot_grid(p1,p2,p3,nrow = 3)
-  plot
+  print(plot)
   ggsave(filename = paste0("confirmed_death_cases_vacc_doses_",state,".png"),
          plot = plot,
          width = 30,
@@ -241,3 +241,78 @@ plot_confirmed_death_per_state_vacc_doses <- function(state){
          units = "cm"
   )
 }
+
+
+plot_covid_indicator_state_level <- function(state){
+  require(tidyverse)
+  
+  state.data <- main.df %>% 
+    filter(state == !!state)
+  
+  p1 <- state.data %>% 
+    select(state,confirmed,deaths,daily_vaccinations,date) %>% 
+    pivot_longer(.,cols = c("confirmed","deaths","daily_vaccinations"),
+                 names_to = "indicator",
+                 values_to = "values") %>%
+    mutate(indicator = as_factor(indicator)) %>% 
+    ggplot(.,aes(x = date,
+                 y = values,
+                 fill = indicator)) +
+    geom_area(alpha = 0.5) +
+    labs(x = "Date",
+         y = "Number of Cases") +
+    ggtitle(paste0("COVID-19 indicators (Total Cases ) for ",state)) +
+    theme(plot.title = element_text(face = "bold",hjust = 0.5))
+  
+  p2 <- state.data %>% 
+    select(state,confirmed_daily_cases_7d_avg,deaths_daily_cases_7d_avg,vaccine_doses_7d_avg,date) %>% 
+    pivot_longer(.,cols = c("confirmed_daily_cases_7d_avg","deaths_daily_cases_7d_avg","vaccine_doses_7d_avg"),
+                 names_to = "indicator",
+                 values_to = "values") %>%
+    mutate(indicator = as_factor(indicator),
+           values = na_if(values,0)) %>% 
+    ggplot(.,aes(x = date,
+                 y = values,
+                 color = indicator,
+                 group = indicator)) +
+    geom_line(linewidth = 0.9) +
+    geom_point(size = 1.2) +
+    scale_y_log10() +
+    labs(x = "Date",
+         y = "Number of Cases") +
+    ggtitle(paste0("COVID-19 indicator (7 Days Average) for ",state)) +
+    theme(plot.title = element_text(face = "bold",hjust = 0.5))
+  
+  p3 <- state.data %>% 
+    select(state,stringency_index_for_display,
+           government_response_index_for_display,
+           containment_health_index_for_display,
+           economic_support_index_for_display
+           ,date) %>% 
+    pivot_longer(.,cols = c("stringency_index_for_display","economic_support_index_for_display","government_response_index_for_display","containment_health_index_for_display"),
+                 names_to = "indicator",
+                 values_to = "values") %>%
+    mutate(indicator = as_factor(indicator)) %>% 
+    ggplot(.,aes(x = date,
+                 y = values,
+                 fill = indicator)) +
+    geom_area(alpha = 0.5) +
+    labs(x = "Date",
+         y = "Government Response") +
+    ggtitle(paste0("COVID-19 indicators ( State Response ) for ",state)) +
+    theme(plot.title = element_text(face = "bold",hjust = 0.5))
+  
+  plots = plot_grid(p1,p2,p3,nrow = 3)
+  
+  print(plots)
+  ggsave(filename = paste0("COVID-19_indicator_",state,".png"),
+         plot = plots,
+         width = 35,
+         height = 25,
+         dpi = 600,
+         units = "cm"
+  )
+  
+  
+}
+

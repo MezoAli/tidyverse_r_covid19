@@ -372,7 +372,8 @@ main.df <- main.df %>%
   arrange(state,date) %>% 
   group_by(state) %>% 
   mutate(confirmed_daily_cases_7d_avg = rollapply(confirmed_daily_cases,FUN = mean,width = 7,align = "right",fill = NA),
-         deaths_daily_cases_7d_avg = rollapply(deaths_daily_cases,FUN = mean,width = 7,align = "right",fill = NA)) %>% 
+         deaths_daily_cases_7d_avg = rollapply(deaths_daily_cases,FUN = mean,width = 7,align = "right",fill = NA),
+         vaccine_doses_7d_avg = rollapply(daily_vaccinations,FUN = mean,width = 7,align = "right",fill = NA)) %>% 
   ungroup()
 
 
@@ -531,4 +532,44 @@ ggsave(filename = "vaccination_over_time.png",
        units = "cm",
        dpi = 600
 )
+
+
+# show each state response rate over time
+
+state_response_rate_over_time <- main.df %>% 
+  filter(days_30_flag) %>%
+  filter(state != "Florida") %>% 
+  select(state,state_,region,,date,days_30_flag,stringency_index_for_display) %>% 
+  left_join(x = .,
+            y =  map_data("state"),
+            by = c("state_"="region")) %>% 
+  ggplot(.,aes(x = long,
+               y = lat,
+               group = group,
+               fill =stringency_index_for_display)) +
+  geom_polygon(color = "black") +
+  facet_wrap(~ date) +
+ scale_fill_viridis_c(option = "magma") +
+  ggtitle("Response Rate per State Over Time") +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5,face = "bold")) +
+  labs(x = "" , y = "")
+
+ggsave(filename = "response_rate_over_time.png",
+       plot = state_response_rate_over_time,
+       width = 30,
+       height = 20,
+       units = "cm",
+       dpi = 600
+)
+
+
+# COVID 19 indicators per state level
+states
+
+plot_covid_indicator_state_level("California")
+plot_covid_indicator_state_level("Florida")
+plot_covid_indicator_state_level("Nevada")
+plot_covid_indicator_state_level("New Mexico")
 
